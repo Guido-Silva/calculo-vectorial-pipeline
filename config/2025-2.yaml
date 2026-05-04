@@ -1,0 +1,37 @@
+ciclo: "2025-2"
+
+dashboard:
+  sheet_id: "TU_SHEET_ID_2025_2_AQUI"
+  hoja_notas: "Notas"
+
+fuentes:
+  canvas:
+    teoria_1: "Teor1.csv"
+    teoria_2: "Teor2.csv"
+  gradescope:
+    ea_patron: "{n}.0{s}.csv"
+
+evaluaciones:
+  # Nomenclatura del ciclo 2025-2 (diferente al 2026-1)
+  # Las tareas se llamaban "C - Tarea Semanal X (ID)"
+  # Las EAs se llamaban "1.01.csv", "1.02.csv", etc.
+  T1:  {fuente: canvas, columna: "C - Tarea Semanal 1"}
+  T2:  {fuente: canvas, columna: "C - Tarea Semanal 2"}
+  T3:  {fuente: canvas, columna: "C - Tarea Semanal 3"}
+  T4:  {fuente: canvas, columna: "C - Tarea Semanal 4"}
+  EA1: {fuente: gradescope, patron: ea_patron, n: 1}
+  EA2: {fuente: gradescope, patron: ea_patron, n: 2}
+  EA3: {fuente: gradescope, patron: ea_patron, n: 3}
+
+pesos:
+  NF:  {TA1: 0.25, TA2: 0.25, EP: 0.20, EF: 0.30}
+  TA1: {PT1: 0.25, PfEA1: 0.70, RC1: 0.05}
+  TA2: {PT2: 0.10, PfEA2: 0.70, RC2: 0.20}
+
+secciones:
+  auditorio: [1, 2]
+  aula: [11, 12, 13, 14, 21, 22, 23, 24]
+
+merge:
+  llave_primaria: "Código"
+  llave_fallback: "Correo"

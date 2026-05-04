@@ -1,0 +1,27 @@
+# Pipeline - Cálculo Vectorial UTEC
+# Instalación: uv pip install -r requirements.txt
+
+# Manipulación de datos
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Lectura de archivos con encoding especial
+openpyxl>=3.1.0
+chardet>=5.0.0
+
+# Configuración YAML
+pyyaml>=6.0.0
+
+# Google Sheets
+gspread>=5.12.0
+google-auth>=2.22.0
+google-auth-oauthlib>=1.1.0
+
+# Visualizaciones
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# Jupyter
+jupyter>=1.0.0
+ipykernel>=6.25.0
+nbformat>=5.9.0
