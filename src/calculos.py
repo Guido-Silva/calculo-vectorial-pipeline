@@ -50,9 +50,10 @@ def _redondear_columna(df: pd.DataFrame, col: str) -> pd.Series:
 
 
 def _promedio_fila(*series: pd.Series) -> pd.Series:
-    """Calcula el promedio fila a fila ignorando NaN.
+    """Calcula el promedio fila a fila. Si algún valor es NaN, el resultado es NaN.
 
-    Si todos los valores de una fila son NaN, el resultado es NaN.
+    Esto asegura que si falta alguna evaluación requerida, el promedio
+    no se calcule parcialmente (por ejemplo PT1 requiere T1, T2, T3 y T4).
 
     Parameters
     ----------
@@ -62,7 +63,7 @@ def _promedio_fila(*series: pd.Series) -> pd.Series:
     Returns
     -------
     pd.Series
-        Serie con el promedio por fila.
+        Serie con el promedio por fila. NaN si algún componente es NaN.
     """
     df_tmp = pd.concat(series, axis=1)
     return df_tmp.mean(axis=1, skipna=False)
@@ -245,7 +246,8 @@ def calcular_PV2(df: pd.DataFrame, cols_ap_bpea2: list[str]) -> pd.Series:
 
     Toma el promedio de los 5 videos de las semanas 9,10,11,13:
     AP7V1, AP7V2, AP8V1, AP9V1, AP10V1.
-    Sin eliminar ninguno.
+    Sin eliminar ninguno. Se promedian los videos disponibles (skipna=True)
+    para no penalizar a alumnos que aún no tienen todos los videos registrados.
 
     Parameters
     ----------
@@ -258,13 +260,18 @@ def calcular_PV2(df: pd.DataFrame, cols_ap_bpea2: list[str]) -> pd.Series:
     Returns
     -------
     pd.Series
-        PV2 (promedio de los 5 videos). NaN si no hay ningún video disponible.
+        PV2 (promedio de los videos disponibles). NaN si no hay ningún video disponible.
     """
     cols_presentes = [c for c in cols_ap_bpea2 if c in df.columns]
     if not cols_presentes:
         return pd.Series(np.nan, index=df.index)
     df_videos = df[cols_presentes].copy()
-    return df_videos.mean(axis=1, skipna=False)
+    # skipna=True: si falta algún video (aún no disponible), se promedian los existentes
+    resultado = df_videos.mean(axis=1, skipna=True)
+    # Retornar NaN solo si TODOS los videos son NaN
+    todo_nan = df_videos.isna().all(axis=1)
+    resultado[todo_nan] = np.nan
+    return resultado
 
 
 # ---------------------------------------------------------------------------

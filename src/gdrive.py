@@ -197,9 +197,11 @@ def escribir_columnas_notas(
         # Leer la columna llave del Sheet para hacer match
         idx_llave_sheet = encabezados.index(col_llave) + 1  # 1-indexed
         valores_llave_sheet = hoja.col_values(idx_llave_sheet)
-        # valores_llave_sheet[0] es el encabezado, valores_llave_sheet[1:] son datos
+        # valores_llave_sheet[0] es el encabezado; los datos comienzan en el índice 1.
+        # fila_idx es 0-indexed en la enumeración → fila real en el sheet = fila_idx + 2
+        # (fila 1 = encabezado, fila 2 = primer dato)
         llave_a_fila = {
-            str(val).strip(): fila_idx + 2  # +2 porque fila 1=encabezado, 0-indexed
+            str(val).strip(): fila_idx + 2
             for fila_idx, val in enumerate(valores_llave_sheet[1:])
             if val
         }
