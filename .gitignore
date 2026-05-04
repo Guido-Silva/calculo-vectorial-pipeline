@@ -1,0 +1,36 @@
+# DATOS DE ALUMNOS — NUNCA suben a GitHub
+# Nota: los archivos .gitkeep se agregan con "git add -f data/**/.gitkeep"
+# porque git no puede des-ignorar archivos dentro de directorios ignorados
+data/**
+!data/**/.gitkeep
+
+# CREDENCIALES DE GOOGLE — NUNCA suben a GitHub
+credentials/*
+!credentials/.gitkeep
+*.json
+
+# Variables de entorno
+.env
+.env.*
+
+# Entorno virtual
+.venv/
+venv/
+.uv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Jupyter checkpoints
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Sistema operativo
+.DS_Store
+Thumbs.db
+desktop.ini
