@@ -63,3 +63,34 @@ secciones:
 merge:
   llave_primaria: "Código"
   llave_fallback: "Correo"
+
+canvas_api:
+  base_url: "https://utec.instructure.com"   # Confirmar URL con UTEC IT
+  course_id: "TU_COURSE_ID_AQUI"             # ID numérico del curso: canvas.utec.edu.pe/courses/XXXXXX
+  # Mapeo: nombre_columna_pipeline → assignment_id en Canvas
+  # Para Tareas: ya existen en Canvas, copiar el ID de la URL del assignment
+  # Para EAs y Tareas de Gradescope: crear assignment en Canvas, linkear desde Gradescope, luego poner el ID aquí
+  assignment_ids:
+    # --- Tareas (ya existen en Canvas) ---
+    "Tarea 1":           0        # Reemplazar con ID real
+    "Tarea 3 - Parte A": 0        # Reemplazar con ID real
+    "Tarea 4":           0        # Reemplazar con ID real
+    "Tarea 5":           0        # Pendiente: crear en Canvas si no existe
+    "Tarea 6":           0        # Pendiente: crear en Canvas si no existe
+    # --- EAs (crear assignment en Canvas + linkar desde Gradescope) ---
+    "EA1":               0        # Reemplazar con ID real tras linkear en Gradescope
+    "EA2":               0        # Reemplazar con ID real tras linkear en Gradescope
+    "EA3":               0        # Reemplazar con ID real tras linkear en Gradescope
+    "EA4":               0        # Pendiente
+    "EA5":               0        # Pendiente
+    "EA6":               0        # Pendiente
+    # --- Tareas de Gradescope (crear assignment en Canvas + linkar desde Gradescope) ---
+    "Tarea 2":           0        # Reemplazar con ID real tras linkear en Gradescope
+    "Tarea 3B":          0        # Reemplazar con ID real tras linkear en Gradescope
+    # --- Exámenes y Recuperaciones ---
+    "ExP":               0        # Pendiente
+    "ExF":               0        # Pendiente
+    "SExP":              0        # Pendiente (Simulacro ExP)
+    "SExF":              0        # Pendiente (Simulacro ExF)
+    "RC1":               0        # Pendiente
+    "RC2":               0        # Pendiente
