@@ -65,32 +65,67 @@ merge:
   llave_fallback: "Correo"
 
 canvas_api:
-  base_url: "https://utec.instructure.com"   # Confirmar URL con UTEC IT
-  course_id: "TU_COURSE_ID_AQUI"             # ID numérico del curso: canvas.utec.edu.pe/courses/XXXXXX
-  # Mapeo: nombre_columna_pipeline → assignment_id en Canvas
-  # Para Tareas: ya existen en Canvas, copiar el ID de la URL del assignment
-  # Para EAs y Tareas de Gradescope: crear assignment en Canvas, linkear desde Gradescope, luego poner el ID aquí
-  assignment_ids:
-    # --- Tareas (ya existen en Canvas) ---
-    "Tarea 1":           0        # Reemplazar con ID real
-    "Tarea 3 - Parte A": 0        # Reemplazar con ID real
-    "Tarea 4":           0        # Reemplazar con ID real
-    "Tarea 5":           0        # Pendiente: crear en Canvas si no existe
-    "Tarea 6":           0        # Pendiente: crear en Canvas si no existe
-    # --- EAs (crear assignment en Canvas + linkar desde Gradescope) ---
-    "EA1":               0        # Reemplazar con ID real tras linkear en Gradescope
-    "EA2":               0        # Reemplazar con ID real tras linkear en Gradescope
-    "EA3":               0        # Reemplazar con ID real tras linkear en Gradescope
-    "EA4":               0        # Pendiente
-    "EA5":               0        # Pendiente
-    "EA6":               0        # Pendiente
-    # --- Tareas de Gradescope (crear assignment en Canvas + linkar desde Gradescope) ---
-    "Tarea 2":           0        # Reemplazar con ID real tras linkear en Gradescope
-    "Tarea 3B":          0        # Reemplazar con ID real tras linkear en Gradescope
-    # --- Exámenes y Recuperaciones ---
-    "ExP":               0        # Pendiente
-    "ExF":               0        # Pendiente
-    "SExP":              0        # Pendiente (Simulacro ExP)
-    "SExF":              0        # Pendiente (Simulacro ExF)
-    "RC1":               0        # Pendiente
-    "RC2":               0        # Pendiente
+  base_url: "https://utec.instructure.com"
+
+  # Auditorios: Tareas semanales y Actividades Previas
+  courses_auditorio:
+    1:  20189
+    2:  20205
+
+  # Aulas: EAs y RCs (Resolución de Casos)
+  courses_aula:
+    11: 20245
+    12: 20246
+    13: 20247
+    14: 20248
+    21: 20249
+    22: 20250
+    23: 20251
+    24: 20252
+
+  # Nombres exactos en Canvas — Auditorios
+  assignments_auditorio:
+    - "Tarea 1"
+    - "Tarea 2"
+    - "Tarea 3 - Parte A"
+    - "Tarea 3 - Parte B"
+    - "Tarea 4"
+    - "Tarea 5"           # pendiente de apertura en Canvas
+    - "Tarea 6"           # pendiente de apertura en Canvas
+    # Actividades Previas — Tramo 1 (12 videos, se usan mejores 11)
+    - "AP1 - Video 1"
+    - "AP1 - Video 2"
+    - "AP2 - Video 1"
+    - "AP2 - Video 2"
+    - "AP3 - Video 1"
+    - "AP3 - Video 2"
+    - "AP4 - Video 1"
+    - "AP4 - Video 2"
+    - "AP5 - Video 1"
+    - "AP5 - Video 2"
+    - "AP6 - Video 1"
+    - "AP6 - Video 2"
+    # Actividades Previas — Tramo 2 (5 videos, semanas 9,10,11,13)
+    - "AP7 - Video 1"
+    - "AP7 - Video 2"
+    - "AP8 - Video 1"
+    - "AP9 - Video 1"
+    - "AP10 - Video 1"
+
+  # Nombres exactos en Canvas — Aulas
+  assignments_aula:
+    - "RC - Primera Entrega"
+    - "RC - Segunda Entrega"
+    - "Evaluación en Aula 1"   # crear en Canvas + Post Grades desde Gradescope
+    - "Evaluación en Aula 2"
+    - "Evaluación en Aula 3"
+    - "Evaluación en Aula 4"
+    - "Evaluación en Aula 5"
+    - "Evaluación en Aula 6"
+
+  # Exámenes — en qué cursos están (confirmar antes de usar)
+  # assignments_examenes:
+  #   - "Examen Parcial"
+  #   - "Examen Final"
+  #   - "Simulacro EP"
+  #   - "Simulacro EF"
