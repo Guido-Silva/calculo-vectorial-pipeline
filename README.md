@@ -133,6 +133,74 @@ escribir_columnas_notas(config["dashboard"]["sheet_id"], df, columnas=["EA1","EA
 
 ---
 
+## 🔌 Canvas API (descarga automática de notas)
+
+### Estrategia
+
+Todo pasa por Canvas: las Tareas ya viven ahí y las notas de Gradescope (EAs y Tareas de Gradescope) se sincronizan a Canvas con **1 click** usando la integración LTI ya activa en UTEC (`GRADESCOPE_API`). El pipeline Python descarga todo desde un solo lugar.
+
+```
+Gradescope (corrección)
+       ↓  "Post Grades to Canvas"  ← el docente hace click una vez por evaluación
+Canvas Gradebook  (Tareas, EAs, …)
+       ↓  Canvas REST API          ← fetch_canvas_grades() lo descarga todo
+Google Sheets Dashboard
+```
+
+### Obtener `course_id` y `assignment_id`
+
+| Dato | Cómo conseguirlo |
+|---|---|
+| `course_id` | URL del curso en Canvas: `.../courses/**123456**` |
+| `assignment_id` | URL del assignment: `.../assignments/**234001**` |
+
+### Configurar el token de Canvas
+
+1. Ir a **Canvas → Cuenta → Configuración → + Nuevo token de acceso**
+2. Copiar el token generado
+3. Crear un archivo `.env` en la raíz del proyecto (basarse en `.env.example`):
+
+```bash
+CANVAS_BASE_URL=https://utec.instructure.com
+CANVAS_TOKEN=tu_token_aqui
+```
+
+> ⚠️ El archivo `.env` está en `.gitignore`. **Nunca** subirlo a GitHub.
+
+### Linkear assignments de Gradescope a Canvas
+
+Para que "Post Grades to Canvas" funcione con las EAs y Tareas de Gradescope:
+
+1. Crear el assignment en **Canvas** (puede ser de tipo "Sin entrega" o "En papel").
+2. Abrir el assignment en **Gradescope** → `Edit Assignment` → sección **LTI** → `Link to Canvas Assignment`.
+3. Seleccionar el assignment creado en el paso 1.
+4. Después de corregir: `Publish Grades` → `Post Grades to Canvas`.
+5. Anotar el `assignment_id` de Canvas y colocarlo en `config/2026-1.yaml` bajo `canvas_api.assignment_ids`.
+
+### Ejemplo de uso
+
+```python
+# Con Canvas API (ciclo activo)
+import os
+import yaml
+from src.canvas_api import fetch_canvas_grades
+
+with open("config/2026-1.yaml") as f:
+    config = yaml.safe_load(f)
+
+df_canvas = fetch_canvas_grades(
+    course_id=config["canvas_api"]["course_id"],
+    columnas=config["canvas_api"]["assignment_ids"],
+)
+# merge.py y calculos.py siguen igual
+
+# Con CSV local (ciclos históricos / fallback)
+from src.ingesta import load_canvas_csv
+df_canvas = load_canvas_csv("data/2025-2/raw/canvas/Teor1.csv")
+```
+
+---
+
 ## 🗓️ Ciclos soportados
 
 | Ciclo | Archivo de configuración | Estado |

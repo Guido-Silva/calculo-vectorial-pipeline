@@ -12,6 +12,7 @@ credentials/*
 # Variables de entorno
 .env
 .env.*
+!.env.example
 
 # Entorno virtual
 .venv/

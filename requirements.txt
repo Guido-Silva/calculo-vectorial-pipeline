@@ -17,6 +17,9 @@ gspread>=5.12.0
 google-auth>=2.22.0
 google-auth-oauthlib>=1.1.0
 
+# Canvas API
+requests>=2.31.0
+
 # Visualizaciones
 matplotlib>=3.7.0
 seaborn>=0.12.0
