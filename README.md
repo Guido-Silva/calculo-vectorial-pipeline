@@ -143,16 +143,24 @@ Todo pasa por Canvas: las Tareas ya viven ahí y las notas de Gradescope (EAs y 
 Gradescope (corrección)
        ↓  "Post Grades to Canvas"  ← el docente hace click una vez por evaluación
 Canvas Gradebook  (Tareas, EAs, …)
-       ↓  Canvas REST API          ← fetch_canvas_grades() lo descarga todo
+       ↓  Canvas REST API          ← fetch_canvas_grades_grupo() lo descarga todo
 Google Sheets Dashboard
 ```
 
-### Obtener `course_id` y `assignment_id`
+### Distribución de assignments por grupo de cursos
+
+| Grupo | Secciones | Assignments |
+|---|---|---|
+| **Auditorios** | Teoría 1 (20189), Teoría 2 (20205) | Tareas + Actividades Previas |
+| **Aulas** | Teoría 11–24 (20245–20252) | RC - Primera/Segunda Entrega + Evaluaciones en Aula 1–6 |
+
+### Obtener `course_id`
 
 | Dato | Cómo conseguirlo |
 |---|---|
 | `course_id` | URL del curso en Canvas: `.../courses/**123456**` |
-| `assignment_id` | URL del assignment: `.../assignments/**234001**` |
+
+Los assignments se buscan por **nombre exacto** en Canvas — no requieren ID numérico.
 
 ### Configurar el token de Canvas
 
@@ -175,28 +183,44 @@ Para que "Post Grades to Canvas" funcione con las EAs y Tareas de Gradescope:
 2. Abrir el assignment en **Gradescope** → `Edit Assignment` → sección **LTI** → `Link to Canvas Assignment`.
 3. Seleccionar el assignment creado en el paso 1.
 4. Después de corregir: `Publish Grades` → `Post Grades to Canvas`.
-5. Anotar el `assignment_id` de Canvas y colocarlo en `config/2026-1.yaml` bajo `canvas_api.assignment_ids`.
 
 ### Ejemplo de uso
 
 ```python
-# Con Canvas API (ciclo activo)
-import os
-import yaml
-from src.canvas_api import fetch_canvas_grades
+import yaml, os
+from dotenv import load_dotenv
+from src.canvas_api import fetch_canvas_grades_grupo, CANVAS_A_PIPELINE
 
+load_dotenv()
 with open("config/2026-1.yaml") as f:
     config = yaml.safe_load(f)
 
-df_canvas = fetch_canvas_grades(
-    course_id=config["canvas_api"]["course_id"],
-    columnas=config["canvas_api"]["assignment_ids"],
-)
-# merge.py y calculos.py siguen igual
+api_cfg = config["canvas_api"]
 
-# Con CSV local (ciclos históricos / fallback)
-from src.ingesta import load_canvas_csv
-df_canvas = load_canvas_csv("data/2025-2/raw/canvas/Teor1.csv")
+# Descargar notas de auditorios (Tareas + APs)
+df_auditorio = fetch_canvas_grades_grupo(
+    courses=api_cfg["courses_auditorio"],
+    assignment_names=api_cfg["assignments_auditorio"],
+    nombre_a_col=CANVAS_A_PIPELINE,
+)
+
+# Descargar notas de aulas (EAs + RCs)
+df_aula = fetch_canvas_grades_grupo(
+    courses=api_cfg["courses_aula"],
+    assignment_names=api_cfg["assignments_aula"],
+    nombre_a_col=CANVAS_A_PIPELINE,
+)
+```
+
+### Verificar nombres de assignments (diagnóstico)
+
+Antes de configurar el pipeline, verificar que los nombres en Canvas coinciden exactamente:
+
+```python
+# Verificar nombres exactos de assignments antes de configurar
+from src.canvas_api import listar_assignments_grupo
+df_lista = listar_assignments_grupo(api_cfg["courses_aula"])
+print(df_lista[["seccion", "nombre", "puntos_posibles"]])
 ```
 
 ---
