@@ -148,7 +148,7 @@ class CanvasClient:
     # ------------------------------------------------------------------
 
     def get_students(self, course_id: str) -> pd.DataFrame:
-        """Devuelve todos los alumnos con código SIS, correo y sección.
+        """Devuelve todos los alumnos con código SIS y correo.
 
         Endpoint: ``GET /api/v1/courses/{course_id}/enrollments``
 
@@ -161,8 +161,9 @@ class CanvasClient:
         -------
         pd.DataFrame
             Columnas: ``user_id``, ``Código`` (SIS user ID), ``Correo``
-            (SIS Login ID = correo institucional en UTEC) y ``Sección``
-            (número extraído del ``sis_section_id``).
+            (SIS Login ID = correo institucional en UTEC).
+            La columna ``Sección`` la asigna ``fetch_canvas_grades_grupo``
+            directamente desde la clave del dict del YAML.
         """
         enrollments = self._get(
             f"/api/v1/courses/{course_id}/enrollments",
@@ -181,7 +182,6 @@ class CanvasClient:
                     "user_id": e.get("user_id"),
                     "Código": e.get("sis_user_id") or user.get("sis_user_id"),
                     "Correo": user.get("login_id"),  # = SIS Login ID en UTEC
-                    "Sección": _extraer_seccion(e.get("sis_section_id", "") or ""),
                 }
             )
         return pd.DataFrame(rows)
@@ -398,7 +398,11 @@ def fetch_canvas_grades_grupo(
         # 1. Alumnos de esta sección
         df_students = client.get_students(course_id)
 
-        # 2. Assignments: filtrar por nombre exacto
+        # 2. Sección viene directamente de la clave del dict YAML (ej. 11, 12, 13...)
+        #    No dependemos de sis_section_id de Canvas (devuelve None en UTEC)
+        df_students["Sección"] = _seccion
+
+        # 3. Assignments: filtrar por nombre exacto
         df_assignments = client.get_assignments(course_id)
         df_found = df_assignments[df_assignments["name"].isin(nombres_set)]
 
@@ -412,10 +416,10 @@ def fetch_canvas_grades_grupo(
 
         assignment_ids = df_found["id"].tolist()
 
-        # 3. Submissions
+        # 4. Submissions
         df_subs = client.get_submissions(course_id, assignment_ids)
 
-        # 4. Pivot: user_id × assignment_id → score
+        # 5. Pivot: user_id × assignment_id → score
         if df_subs.empty:
             df_pivot = pd.DataFrame({"user_id": pd.Series(dtype="object")})
             for aid in assignment_ids:
@@ -429,7 +433,7 @@ def fetch_canvas_grades_grupo(
             )
             df_pivot.reset_index(inplace=True)
 
-        # 5. Renombrar: assignment_id → nombre Canvas → columna pipeline
+        # 6. Renombrar: assignment_id → nombre Canvas → columna pipeline
         id_to_canvas_name = df_found.set_index("id")["name"].to_dict()
         rename_map = {
             aid: nombre_a_col[cname]
