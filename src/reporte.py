@@ -42,9 +42,13 @@ def estadisticas_por_seccion(
         DataFrame con columnas: ``Sección``, ``N``, ``Media``, ``Mediana``,
         ``Std``, ``Mín``, ``Máx``, ``% >= 10.5``.
     """
+    columnas_salida = [
+        "Sección", "N", "Media", "Mediana", "Std", "Mín", "Máx", "% >= 10.5",
+    ]
+
     if columna not in df.columns:
         print(f"[AVISO] La columna '{columna}' no existe en el DataFrame.")
-        return pd.DataFrame()
+        return pd.DataFrame(columns=columnas_salida)
 
     if col_seccion not in df.columns:
         print(f"[AVISO] La columna de sección '{col_seccion}' no existe en el DataFrame.")
@@ -77,6 +81,10 @@ def estadisticas_por_seccion(
             "Máx": round(serie.max(), 2),
             "% >= 10.5": round((serie >= 10.5).mean() * 100, 1),
         })
+
+    if not filas:
+        print(f"[AVISO] No hay datos no nulos para '{columna}' por sección.")
+        return pd.DataFrame(columns=columnas_salida)
 
     return pd.DataFrame(filas).sort_values("Sección").reset_index(drop=True)
 

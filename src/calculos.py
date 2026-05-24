@@ -12,7 +12,8 @@ Implementa todas las fórmulas del sistema de evaluación:
   - NF: nota final
 
 Reglas de redondeo:
-  - Cada T y EA individual: round() al entero más cercano antes de calcular
+  - Cada T y EA individual: redondeo académico al entero más cercano antes de calcular
+    (.5 sube)
   - PT1, PT2, PEA1, PEA2, PfEA1, PfEA2: round a 2 decimales
   - T3 = T3A + T3B (T3A sobre 12, T3B sobre 8, suma = sobre 20)
 """
@@ -26,6 +27,17 @@ import pandas as pd
 # ---------------------------------------------------------------------------
 # Utilidades internas
 # ---------------------------------------------------------------------------
+
+def _redondear_mitad_arriba(valor) -> float:
+    """Redondea notas no negativas al entero más cercano, con .5 hacia arriba."""
+    if pd.isna(valor):
+        return np.nan
+    try:
+        numero = float(str(valor).strip().replace(",", "."))
+    except ValueError:
+        return np.nan
+    return float(np.floor(numero + 0.5))
+
 
 def _redondear_columna(df: pd.DataFrame, col: str) -> pd.Series:
     """Retorna la columna redondeada al entero más cercano.
@@ -46,7 +58,7 @@ def _redondear_columna(df: pd.DataFrame, col: str) -> pd.Series:
     """
     if col not in df.columns:
         return pd.Series(np.nan, index=df.index)
-    return df[col].apply(lambda x: round(x) if pd.notna(x) else np.nan)
+    return df[col].apply(_redondear_mitad_arriba)
 
 
 def _promedio_fila(*series: pd.Series) -> pd.Series:
@@ -128,7 +140,7 @@ def calcular_PT1(df: pd.DataFrame) -> pd.Series:
 
     T1 = _redondear_columna(df, "T1")
     T2 = _redondear_columna(df, "T2")
-    T3r = T3.apply(lambda x: round(x) if pd.notna(x) else np.nan)
+    T3r = T3.apply(_redondear_mitad_arriba)
     T4 = _redondear_columna(df, "T4")
 
     resultado = _promedio_fila(T1, T2, T3r, T4)
@@ -745,7 +757,35 @@ def ejecutar_calculos(
     resultado["BPEA2"] = calcular_BPEA2(resultado)
 
     # 5. Examen Parcial (necesario para BPEA1_final)
-    resultado["EP"] = calcular_EP(resultado)
+    # Conservar notas crudas de ExP y SExP
+    if "ExP" in resultado.columns:
+        resultado["ExP_raw"] = resultado["ExP"]
+    if "SExP" in resultado.columns:
+        resultado["SExP_raw"] = resultado["SExP"]
+
+    # Calcular ExP normalizada (cap en 20)
+    if "ExP" in resultado.columns:
+        resultado["ExP"] = resultado["ExP"].apply(lambda x: min(x, 20) if pd.notna(x) else np.nan)
+
+    # Calcular bonus SExP según reglas
+    if "SExP_raw" in resultado.columns:
+        def bonus_simulacro(val):
+            if pd.isna(val):
+                return np.nan  # Deja celda vacía si no se presentó
+            if val >= 18:
+                return 2
+            if val >= 14:
+                return 1
+            return 0
+        resultado["SExP_bonus"] = resultado["SExP_raw"].apply(bonus_simulacro)
+    else:
+        resultado["SExP_bonus"] = 0
+
+    # EP final: ExP normalizada + bonus, cap en 20
+    if "ExP" in resultado.columns:
+        resultado["EP"] = (resultado["ExP"] + resultado["SExP_bonus"]).apply(lambda x: min(x, 20) if pd.notna(x) else np.nan)
+    else:
+        resultado["EP"] = np.nan
 
     # 6. BPEA1 final con condición EP >= 8
     resultado["BPEA1_final"] = calcular_BPEA1_final(resultado)

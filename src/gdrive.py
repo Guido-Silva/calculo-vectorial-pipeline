@@ -10,6 +10,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Optional
 
+import numpy as np
 import pandas as pd
 
 try:
@@ -25,6 +26,30 @@ SCOPES = [
     "https://www.googleapis.com/auth/spreadsheets",
     "https://www.googleapis.com/auth/drive",
 ]
+
+
+COLUMNAS_REDONDEO_ENTERO = {
+    "EA1", "EA2", "EA3", "EA4", "EA5", "EA6",
+    "T2", "T3",
+}
+
+
+def _redondear_mitad_arriba(valor) -> int | float:
+    """Redondea notas no negativas al entero más cercano, con .5 hacia arriba."""
+    if pd.isna(valor):
+        return np.nan
+    try:
+        numero = float(str(valor).strip().replace(",", "."))
+    except ValueError:
+        return valor
+    return int(np.floor(numero + 0.5))
+
+
+def _valor_para_google_sheets(columna: str, valor):
+    """Prepara un valor antes de escribirlo en Google Sheets."""
+    if columna in COLUMNAS_REDONDEO_ENTERO:
+        return _redondear_mitad_arriba(valor)
+    return valor
 
 
 # ---------------------------------------------------------------------------
@@ -219,7 +244,7 @@ def escribir_columnas_notas(
             for col in columnas:
                 if col not in df.columns:
                     continue
-                valor = row.get(col)
+                valor = _valor_para_google_sheets(col, row.get(col))
                 if pd.isna(valor):
                     continue
                 idx_col_sheet = encabezados.index(col) + 1  # 1-indexed

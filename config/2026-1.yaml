@@ -1,39 +1,10 @@
 ciclo: "2026-1"
 
 dashboard:
-  sheet_id: "TU_SHEET_ID_AQUI"  # Reemplazar localmente, no subir el ID real
+  sheet_id: "1SJSGGZuVU1gOFce5gH5aqObpGng4LDYaWkdH-xVZyFI"  # Reemplazar localmente, no subir el ID real
   hoja_notas: "Notas"
   hoja_formativa: "Formativa"
 
-fuentes:
-  canvas:
-    teoria_1: "Teoria_1.csv"
-    teoria_2: "Teoria_2.csv"
-  gradescope:
-    ea_patron: "EA{n}_Teor{s}.csv"
-    tarea_2: "Tarea_2_scores.csv"
-    tarea_3b: "Tarea_3B_scores.csv"
-
-evaluaciones:
-  T1:  {fuente: canvas,     archivo: teoria_1, columna: "Tarea 1"}
-  T2:  {fuente: gradescope, archivo: tarea_2}
-  T3A: {fuente: canvas,     archivo: teoria_1, columna: "Tarea 3 - Parte A"}
-  T3B: {fuente: gradescope, archivo: tarea_3b}
-  T4:  {fuente: canvas,     archivo: teoria_1, columna: "Tarea 4"}
-  T5:  {fuente: pendiente}
-  T6:  {fuente: pendiente}
-  EA1: {fuente: gradescope, patron: ea_patron, n: 1}
-  EA2: {fuente: gradescope, patron: ea_patron, n: 2}
-  EA3: {fuente: gradescope, patron: ea_patron, n: 3}
-  EA4: {fuente: pendiente}
-  EA5: {fuente: pendiente}
-  EA6: {fuente: pendiente}
-  RC1: {fuente: pendiente}
-  RC2: {fuente: pendiente}
-  ExP: {fuente: pendiente}
-  ExF: {fuente: pendiente}
-  SExP: {fuente: pendiente}
-  SExF: {fuente: pendiente}
 
 ap_videos:
   BPEA1:
@@ -63,6 +34,12 @@ secciones:
 merge:
   llave_primaria: "Código"
   llave_fallback: "Correo"
+
+
+
+# Flujo vigente 2026-1:
+# Todas las notas se descargan desde Canvas API.
+# Gradescope solo se usa aguas arriba para corregir y publicar notas a Canvas.
 
 canvas_api:
   base_url: "https://utec.instructure.com"
@@ -111,6 +88,8 @@ canvas_api:
     - "AP8 - Video 1"
     - "AP9 - Video 1"
     - "AP10 - Video 1"
+    # Simulacro (bonus)
+    - "Simulacro EP"
 
   # Nombres exactos en Canvas — Aulas
   assignments_aula:
@@ -122,10 +101,11 @@ canvas_api:
     - "Evaluación en Aula 4"
     - "Evaluación en Aula 5"
     - "Evaluación en Aula 6"
+    - "Examen Parcial"
 
   # Exámenes — en qué cursos están (confirmar antes de usar)
   # assignments_examenes:
   #   - "Examen Parcial"
   #   - "Examen Final"
-  #   - "Simulacro EP"
+  
   #   - "Simulacro EF"

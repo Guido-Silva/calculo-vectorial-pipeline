@@ -8,9 +8,61 @@ primaria y el correo como fallback.
 
 from __future__ import annotations
 
-from typing import Optional
-
 import pandas as pd
+
+
+def _nombres_temporales(
+    columnas: list[str],
+    columnas_existentes: set[str],
+    prefijo: str,
+) -> dict[str, str]:
+    """Crea nombres temporales que no colisionen con el DataFrame base."""
+    nombres: dict[str, str] = {}
+    usados = set(columnas_existentes)
+    for i, col in enumerate(columnas):
+        candidato_base = f"__{prefijo}_{i}__"
+        candidato = candidato_base
+        j = 1
+        while candidato in usados:
+            candidato = f"{candidato_base}_{j}"
+            j += 1
+        nombres[col] = candidato
+        usados.add(candidato)
+    return nombres
+
+
+def _aplicar_columnas_temporales(
+    df: pd.DataFrame,
+    nombres_tmp: dict[str, str],
+    mask_filas: pd.Series | None = None,
+) -> pd.DataFrame:
+    """Copia valores temporales no nulos a las columnas canónicas."""
+    for col, col_tmp in nombres_tmp.items():
+        if col not in df.columns:
+            df[col] = pd.NA
+
+        valores_tmp_num = pd.to_numeric(df[col_tmp], errors="coerce")
+        tmp_no_nulos = df[col_tmp].notna()
+        fuente_es_numerica = bool(
+            tmp_no_nulos.any() and valores_tmp_num[tmp_no_nulos].notna().all()
+        )
+
+        if fuente_es_numerica:
+            df[col] = pd.to_numeric(
+                df[col].astype("string").str.replace(",", ".", regex=False),
+                errors="coerce",
+            )
+            df[col_tmp] = valores_tmp_num
+        else:
+            df[col] = df[col].astype("object")
+
+        mask = df[col_tmp].notna()
+        if mask_filas is not None:
+            mask = mask & mask_filas
+
+        df.loc[mask, col] = df.loc[mask, col_tmp]
+
+    return df.drop(columns=list(nombres_tmp.values()))
 
 
 # ---------------------------------------------------------------------------
@@ -43,16 +95,28 @@ def merge_por_codigo(
     pd.DataFrame
         df_base enriquecido con las columnas de la fuente.
     """
-    columnas_merge = ["Código"] + [c for c in columnas if c in df_fuente.columns]
-    df_fuente_sel = df_fuente[columnas_merge].copy()
+    cols_disponibles = [c for c in columnas if c in df_fuente.columns]
+    if not cols_disponibles:
+        return df_base
+
+    nombres_tmp = _nombres_temporales(
+        cols_disponibles,
+        set(df_base.columns) | set(df_fuente.columns),
+        f"codigo{sufijo}",
+    )
+    df_fuente_sel = (
+        df_fuente[["Código"] + cols_disponibles]
+        .dropna(subset=["Código"])
+        .drop_duplicates(subset=["Código"])
+        .rename(columns=nombres_tmp)
+    )
 
     resultado = df_base.merge(
         df_fuente_sel,
         on="Código",
         how="left",
-        suffixes=("", sufijo),
     )
-    return resultado
+    return _aplicar_columnas_temporales(resultado, nombres_tmp)
 
 
 # ---------------------------------------------------------------------------
@@ -101,56 +165,71 @@ def merge_con_fallback(
         return df_base
 
     # --- Paso 1: merge por Código ---
-    cols_fuente_codigo = ["Código"] + cols_disponibles
-    df_merge1 = df_base.merge(
-        df_fuente[cols_fuente_codigo].drop_duplicates(subset=["Código"]),
-        on="Código",
-        how="left",
-        suffixes=("", sufijo),
-    )
+    if "Código" in df_fuente.columns and "Código" in df_base.columns:
+        nombres_codigo = _nombres_temporales(
+            cols_disponibles,
+            set(df_base.columns) | set(df_fuente.columns),
+            f"codigo{sufijo}",
+        )
+        df_fuente_codigo = (
+            df_fuente[["Código"] + cols_disponibles]
+            .dropna(subset=["Código"])
+            .drop_duplicates(subset=["Código"])
+            .rename(columns=nombres_codigo)
+        )
+        df_merge1 = df_base.merge(
+            df_fuente_codigo,
+            on="Código",
+            how="left",
+        )
+        cols_tmp_codigo = list(nombres_codigo.values())
+        match_codigo = df_merge1[cols_tmp_codigo].notna().any(axis=1)
+        df_merge1 = _aplicar_columnas_temporales(df_merge1, nombres_codigo)
+    else:
+        df_merge1 = df_base.copy()
+        match_codigo = pd.Series(False, index=df_merge1.index)
 
-    # Identificar alumnos que NO matchearon por Código
-    # (tienen NaN en TODAS las columnas que queríamos agregar)
-    sin_match = df_merge1[cols_disponibles].isna().all(axis=1)
-    n_por_codigo = (~sin_match).sum()
+    n_por_codigo = int(match_codigo.sum())
+    sin_match = ~match_codigo
 
     # --- Paso 2: fallback por Correo ---
+    match_correo = pd.Series(False, index=df_merge1.index)
     if "Correo" in df_fuente.columns and "Correo" in df_base.columns:
-        cols_fuente_correo = ["Correo"] + cols_disponibles
+        nombres_correo = _nombres_temporales(
+            cols_disponibles,
+            set(df_merge1.columns) | set(df_fuente.columns),
+            f"correo{sufijo}",
+        )
         df_fuente_correo = (
-            df_fuente[cols_fuente_correo]
+            df_fuente[["Correo"] + cols_disponibles]
+            .dropna(subset=["Correo"])
             .drop_duplicates(subset=["Correo"])
-            .rename(columns={c: f"{c}_fallback" for c in cols_disponibles})
+            .rename(columns=nombres_correo)
         )
 
         df_merge2 = df_merge1.merge(
             df_fuente_correo,
             on="Correo",
             how="left",
-            suffixes=("", "_fb"),
         )
+        cols_tmp_correo = list(nombres_correo.values())
+        match_correo = sin_match & df_merge2[cols_tmp_correo].notna().any(axis=1)
 
         # Para los alumnos sin match por Código, usar el valor del fallback
-        for col in cols_disponibles:
-            col_fb = f"{col}_fallback"
-            if col_fb in df_merge2.columns:
-                # Solo reemplazar donde había NaN Y hay valor en el fallback
-                mask_reemplazar = sin_match & df_merge2[col_fb].notna()
-                df_merge2.loc[mask_reemplazar, col] = df_merge2.loc[mask_reemplazar, col_fb]
-                df_merge2 = df_merge2.drop(columns=[col_fb])
-
-        df_resultado = df_merge2
+        df_resultado = _aplicar_columnas_temporales(
+            df_merge2,
+            nombres_correo,
+            mask_filas=sin_match,
+        )
     else:
         df_resultado = df_merge1
 
     # Calcular estadísticas de cobertura
-    sin_match_final = df_resultado[cols_disponibles].isna().all(axis=1)
-    n_por_correo = (~sin_match_final).sum() - n_por_codigo
-    n_sin_match = sin_match_final.sum()
+    n_por_correo = int(match_correo.sum())
+    n_sin_match = len(df_base) - n_por_codigo - n_por_correo
     total = len(df_base)
 
     if verbose:
-        col_repr = cols_disponibles[0] if cols_disponibles else "?"
         print(f"\n[MERGE] Columnas: {cols_disponibles}")
         print(f"  Total alumnos en base : {total}")
         print(f"  Match por Código      : {n_por_codigo}")
