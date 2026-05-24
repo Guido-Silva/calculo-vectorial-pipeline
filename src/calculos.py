@@ -488,7 +488,8 @@ def _calcular_bonus_simulacro(simulacro_serie: pd.Series) -> pd.Series:
 
         simulacro >= 18         → bonus = 2
         14 <= simulacro <= 17   → bonus = 1
-        simulacro < 14 o NaN   → bonus = 0
+        simulacro < 14          → bonus = 0
+        simulacro NaN           → bonus = NaN
 
     Parameters
     ----------
@@ -498,11 +499,11 @@ def _calcular_bonus_simulacro(simulacro_serie: pd.Series) -> pd.Series:
     Returns
     -------
     pd.Series
-        Bonus (0, 1 o 2).
+        Bonus (0, 1, 2 o NaN si no se presento).
     """
     def bonus_sim(s):
         if pd.isna(s):
-            return 0
+            return np.nan
         if s >= 18:
             return 2
         if s >= 14:
@@ -541,7 +542,7 @@ def calcular_EP(df: pd.DataFrame) -> pd.Series:
     else:
         bonus = pd.Series(0, index=df.index)
 
-    ep = exp_norm + bonus
+    ep = exp_norm + bonus.fillna(0)
     return ep.apply(lambda x: min(x, 20) if pd.notna(x) else np.nan)
 
 
@@ -574,7 +575,7 @@ def calcular_EF(df: pd.DataFrame) -> pd.Series:
     else:
         bonus = pd.Series(0, index=df.index)
 
-    ef = exf_norm + bonus
+    ef = exf_norm + bonus.fillna(0)
     return ef.apply(lambda x: min(x, 20) if pd.notna(x) else np.nan)
 
 
@@ -757,33 +758,38 @@ def ejecutar_calculos(
     resultado["BPEA2"] = calcular_BPEA2(resultado)
 
     # 5. Examen Parcial (necesario para BPEA1_final)
-    # Conservar notas crudas de ExP y SExP
+    # Conservar notas crudas de ExP y SExP.
+    # SExP queda como la bonificacion visible para Google Sheets.
     if "ExP" in resultado.columns:
         resultado["ExP_raw"] = resultado["ExP"]
-    if "SExP" in resultado.columns:
+    if "SExP_raw" not in resultado.columns and "SExP" in resultado.columns:
         resultado["SExP_raw"] = resultado["SExP"]
+    if "SExP_bonus" in resultado.columns:
+        resultado = resultado.drop(columns=["SExP_bonus"])
 
     # Calcular ExP normalizada (cap en 20)
     if "ExP" in resultado.columns:
         resultado["ExP"] = resultado["ExP"].apply(lambda x: min(x, 20) if pd.notna(x) else np.nan)
 
-    # Calcular bonus SExP según reglas
+    # Calcular bonus SExP segun reglas.
+    # NaN significa que el alumno no se presento al simulacro.
     if "SExP_raw" in resultado.columns:
         def bonus_simulacro(val):
             if pd.isna(val):
-                return np.nan  # Deja celda vacía si no se presentó
+                return np.nan
             if val >= 18:
                 return 2
             if val >= 14:
                 return 1
             return 0
-        resultado["SExP_bonus"] = resultado["SExP_raw"].apply(bonus_simulacro)
+        resultado["SExP"] = resultado["SExP_raw"].apply(bonus_simulacro)
     else:
-        resultado["SExP_bonus"] = 0
+        resultado["SExP"] = np.nan
 
     # EP final: ExP normalizada + bonus, cap en 20
     if "ExP" in resultado.columns:
-        resultado["EP"] = (resultado["ExP"] + resultado["SExP_bonus"]).apply(lambda x: min(x, 20) if pd.notna(x) else np.nan)
+        bonus_para_ep = resultado["SExP"].fillna(0)
+        resultado["EP"] = (resultado["ExP"] + bonus_para_ep).apply(lambda x: min(x, 20) if pd.notna(x) else np.nan)
     else:
         resultado["EP"] = np.nan
 

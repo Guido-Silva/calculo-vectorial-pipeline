@@ -1,6 +1,6 @@
 # Pipeline de Cálculo Vectorial — UTEC
 
-Pipeline automatizado para procesar notas de **Canvas** y **Gradescope**, calcular evaluaciones continuas y subir resultados a **Google Sheets**. Desarrollado para el curso CC1104 - Cálculo Vectorial en la Universidad de Ingeniería y Tecnología (UTEC).
+Pipeline automatizado para procesar notas de **Canvas** y **Gradescope**, calcular evaluaciones continuas y subir resultados a **Google Sheets**. El repositorio también incluye utilidades operativas para administrar Canvas cuando hace falta crear assignments o publicar notas calculadas. Desarrollado para el curso CC1104 - Cálculo Vectorial en la Universidad de Ingeniería y Tecnología (UTEC).
 
 ---
 
@@ -12,6 +12,27 @@ Este pipeline permite:
 - **Calcular** PT1, PT2, PEA1, PEA2, BPEA1, BPEA2, TA1, TA2, EP, EF y NF según las fórmulas del sistema de evaluación UTEC
 - **Subir** los resultados al dashboard de Google Sheets del curso
 - **Comparar** resultados entre ciclos académicos
+
+Además, fuera del pipeline principal:
+- **Administrar Canvas** para crear assignments o revisar grupos de tareas
+- **Publicar notas calculadas a Canvas** cuando una evaluación final debe volver al gradebook
+
+## Arquitectura conceptual
+
+El repo tiene dos zonas con objetivos distintos:
+
+1. **Pipeline principal**
+   - Descarga datos desde Canvas
+   - Los mergea con la base del curso
+   - Calcula notas
+   - Exporta resultados a CSV y Google Sheets
+
+2. **Operaciones Canvas**
+   - Acciones con efecto real sobre Canvas
+   - Creación de assignments
+   - Publicación manual de notas calculadas
+
+Esta separación ayuda a que el notebook principal sea analítico y reproducible, mientras que las tareas operativas quedan encapsuladas en módulos y notebooks administrativos.
 
 ---
 
@@ -28,9 +49,13 @@ calculo-vectorial-pipeline/
 │   ├── merge.py             # Unificación de fuentes por Código/Correo
 │   ├── calculos.py          # Fórmulas de evaluación
 │   ├── reporte.py           # Estadísticas y gráficas
-│   └── gdrive.py            # Integración con Google Sheets
+│   ├── gdrive.py            # Integración con Google Sheets
+│   ├── canvas_api.py        # Descarga de datos y cliente base de Canvas
+│   ├── canvas_admin.py      # Creación de assignments y otras tareas administrativas
+│   └── canvas_publish.py    # Publicación de notas calculadas a Canvas
 ├── notebooks/
 │   ├── 2026-1_exploracion.ipynb     # Pipeline interactivo ciclo actual
+│   ├── 2026-1_admin_canvas.ipynb    # Operaciones manuales/administrativas en Canvas
 │   └── comparacion_ciclos.ipynb     # Comparación entre ciclos
 ├── data/                    # ⚠️ NO se sube a GitHub (ver nota de privacidad)
 │   ├── 2026-1/
@@ -92,7 +117,7 @@ El pipeline está dividido en fases. Ejecutar el notebook correspondiente al cic
 notebooks/2026-1_exploracion.ipynb
 ```
 
-### Fases del pipeline
+### Fases del pipeline principal
 
 | Fase | Descripción |
 |------|-------------|
@@ -101,6 +126,13 @@ notebooks/2026-1_exploracion.ipynb
 | 3. Cálculos | Calcula PT, PEA, BPEA, TA, EP, EF, NF |
 | 4. Reporte | Estadísticas por sección y alumnos en riesgo |
 | 5. Exportar | Guarda CSV local y/o actualiza Google Sheets |
+
+### Operaciones fuera del pipeline principal
+
+| Tarea | Dónde vive |
+|------|-------------|
+| Crear assignments en Canvas | `src/canvas_admin.py` y `notebooks/2026-1_admin_canvas.ipynb` |
+| Publicar notas calculadas a Canvas | `src/canvas_publish.py` y `notebooks/2026-1_admin_canvas.ipynb` |
 
 ### Ejemplo de uso programático
 
@@ -269,3 +301,6 @@ cp /ruta/a/tu/service_account.json credentials/
 # 6. Abrir el notebook de exploración
 jupyter notebook notebooks/2026-1_exploracion.ipynb
 ```
+
+
+
